@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>For Vasundhara Tripathi </title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+  }
+
+  #typingScreen {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('bg1.jpg') center center / contain no-repeat;
+    background-color: #000;   /* ← sides mein black fill */
+    color: black;
+    font-size: 26px;
+    font-weight: bold;        /* ← bold */
+    text-align: center;
+    position: relative;
+  }
+
+  #text {
+    white-space: pre-wrap;
+    line-height: 1.7;
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    width: 90%;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.55);
+    padding: 16px 20px;
+    border-radius: 12px;
+  }
+
+  #starScreen { display: none; background: black; color: white; }
+
+  canvas { display: block; }
+
+  #messageBox {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s, transform 0.5s;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    z-index: 10;
+    color: white;
+    font-size: 20px;
+    max-width: 520px;
+    width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 40px 35px;
+  }
+
+  #messageBox.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: auto;
+  }
+
+  /* FIX: image poori dikhegi, stretch nahi hogi */
+  #messageBox img {
+    width: 100%;
+    max-height: 55vh;
+    object-fit: contain;
+    margin-top: 10px;
+    border-radius: 10px;
+    opacity: 0;
+    transform: scale(0.7);
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+    transition: all 0.6s ease;
+    display: block;
+  }
+
+  #messageBox video {
+    width: 100%;
+    max-height: 55vh;
+    object-fit: contain;
+    margin-top: 10px;
+    border-radius: 10px;
+    opacity: 0;
+    transform: scale(0.7);
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+    transition: all 0.6s ease;
+    display: block;
+  }
+
+  #messageBox img.imgShow {
+    opacity: 1;
+    transform: scale(1);
+    animation: floatImg 3s ease-in-out infinite;
+  }
+
+  #messageBox video.imgShow {
+    opacity: 1;
+    transform: scale(1);
+    animation: none;
+  }
+
+  @keyframes floatImg {
+    0%, 100% { transform: scale(1) translateY(0); }
+    50%       { transform: scale(1.05) translateY(-10px); }
+  }
+
+  #starContent.blur { filter: blur(5px); transition: filter 0.4s; }
+  #starContent      { transition: filter 0.4s; }
+
+  #gallery {
+    display: none;
+    position: fixed;
+    width: 100%; height: 100%;
+    background: black;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #gallery img {
+    width: 500px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px white;
+    transition: opacity 0.5s;
+  }
+
+  #typingScreen2 {
+    display: none;
+    position: fixed;
+    width: 100%; height: 100%;
+    background: url('bg2.jpg') center center / contain no-repeat;
+    background-color: #000;   /* ← sides mein black fill */
+    color: black;
+    font-size: 22px;
+    font-weight: bold;        /* ← bold */
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    z-index: 20;
+  }
+
+  #text2 {
+    white-space: pre-wrap;
+    line-height: 1.9;
+    padding: 16px 20px;
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    width: 90%;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.55);
+    border-radius: 12px;
+  }
+
+  .heart {
+    position: fixed;
+    bottom: -40px;
+    color: pink;
+    font-size: 20px;
+    animation: floatUp 5s linear forwards;
+    pointer-events: none;
+  }
+
+  @keyframes floatUp {
+    from { transform: translateY(0);      opacity: 1; }
+    to   { transform: translateY(-110vh); opacity: 0; }
+  }
+
+  #tapHint {
+    position: fixed;
+    bottom: 30px;
+    width: 100%;
+    text-align: center;
+    color: rgba(255,255,255,0.55);
+    font-size: 14px;
+    letter-spacing: 1px;
+    animation: pulse 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<audio id="bgm" src="bgm.mp3" loop></audio>
+
+<div id="typingScreen"><div id="text"></div></div>
+
+<div id="starScreen">
+  <div id="starContent">
+    <canvas id="sky"></canvas>
+  </div>
+  <div id="tapHint">✨ Tap anywhere to reveal a memory ✨</div>
+  <div id="messageBox">
+    <p id="msgText"></p>
+    <img id="msgImage" alt="">
+    <video id="msgVideo" controls playsinline></video>
+    <p style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:12px;">tap to close</p>
+  </div>
+</div>
+
+<div id="gallery"><img id="slideImg" alt=""></div>
+
+<div id="typingScreen2"><div id="text2"></div></div>
+
+<script>
+  const typingScreen  = document.getElementById('typingScreen');
+  const textEl        = document.getElementById('text');
+  const starScreen    = document.getElementById('starScreen');
+  const starContent   = document.getElementById('starContent');
+  const sky           = document.getElementById('sky');
+  const messageBox    = document.getElementById('messageBox');
+  const msgText       = document.getElementById('msgText');
+  const msgImage      = document.getElementById('msgImage');
+  const msgVideo      = document.getElementById('msgVideo');
+  const tapHint       = document.getElementById('tapHint');
+  const galleryEl     = document.getElementById('gallery');
+  const slideImg      = document.getElementById('slideImg');
+  const finalScreen   = document.getElementById('typingScreen2');
+  const textEl2       = document.getElementById('text2');
+
+  const lines1 = [
+    "Happy Birthday Dear Vasundhara!!❤️ ",
+    "Here's something for a very special chudail👻😅 on her special day ",
+    "I hope you will like it...🤞🏻😊"
+  ];
+
+  const lines2 = [
+    "Wishing you a very very Happy Birthday Vasundhara(❁´◡`❁)🎁🎂❤️",
+    "Congratulations on turning 19(jawani ko 1 saal hogye😅)🎉👍 ",
+    "Always keep smiling, enjoying and shining😇✨",
+    "May God Bless you with lots of success, happiness,good health, love, laughter and all what you want 😇💝",
+    ":- From Philosophical Nitin Kunwara Singh"
+  ];
+
+  function startTyping(lines, el, onDone) {
+    let lineIdx = 0, charIdx = 0, txt = "";
+    function tick() {
+      if (lineIdx < lines.length) {
+        if (charIdx < lines[lineIdx].length) {
+          txt += lines[lineIdx][charIdx];
+          el.innerText = txt;
+          charIdx++;
+          setTimeout(tick, 45);
+        } else {
+          txt += "\n";
+          lineIdx++; charIdx = 0;
+          setTimeout(tick, 450);
+        }
+      } else if (onDone) {
+        setTimeout(onDone, 1200);
+      }
+    }
+    tick();
+  }
+
+  startTyping(lines1, textEl, startStars);
+  createHearts();
+  setInterval(createHearts, 3000);
+
+  function startStars() {
+    typingScreen.style.display = "none";
+    starScreen.style.display   = "block";
+    initStars();
+  }
+
+  function initStars() {
+    const ctx = sky.getContext("2d");
+
+    function resize() {
+      sky.width  = window.innerWidth;
+      sky.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const stars = Array.from({ length: 120 }, () => ({
+      x: Math.random() * sky.width,
+      y: Math.random() * sky.height,
+      r: Math.random() * 2 + 0.5,
+      speed: Math.random() * 0.3 + 0.1
+    }));
+
+    function drawStars() {
+      ctx.clearRect(0, 0, sky.width, sky.height);
+      ctx.fillStyle = "white";
+      stars.forEach(s => {
+        s.y += s.speed;
+        if (s.y > sky.height) s.y = 0;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      requestAnimationFrame(drawStars);
+    }
+    drawStars();
+
+    const data = [
+      { type: "image", text: "Selfies to acchi khichti ho(kuch to aata h😅)...some special selfies😍",              src: "img1.jpg" },
+      { type: "video", text: "Every moment with you is unforgettable for me...tried to put some funny one's here..", src: "video2.mp4" },
+      { type: "image", text: "I felt most special for you and also most special with you..✨",                        src: "img3.jpg" },
+      { type: "video", text: "Happy Birthday Vasundhara🎂❤️",                                                        src: "video4.mp4" }  // ← img4 ki jagah video4
+    ];
+
+    let cardIdx = 0;
+    let boxOpen = false;
+
+    sky.addEventListener('click', () => {
+      if (boxOpen) return;
+
+      if (cardIdx >= data.length) {
+        setTimeout(startGallery, 400);
+        return;
+      }
+
+      const d = data[cardIdx++];
+      msgText.innerText = d.text;
+
+      if (d.type === "video") {
+        msgImage.style.display = "none";
+        msgImage.classList.remove("imgShow");
+        msgVideo.style.display = "block";
+        msgVideo.classList.remove("imgShow");
+        msgVideo.src = d.src;
+        msgVideo.load();
+        setTimeout(() => {
+          msgVideo.classList.add("imgShow");
+          msgVideo.play();
+        }, 120);
+      } else {
+        msgVideo.pause();
+        msgVideo.style.display = "none";
+        msgVideo.classList.remove("imgShow");
+        msgImage.style.display = "block";
+        msgImage.classList.remove("imgShow");
+        msgImage.src = d.src;
+        setTimeout(() => msgImage.classList.add("imgShow"), 120);
+      }
+
+      messageBox.classList.add("show");
+      tapHint.style.display = "none";
+      boxOpen = true;
+      starContent.classList.add("blur");
+      createHearts();
+    });
+
+    messageBox.addEventListener('click', () => {
+      msgVideo.pause();
+      msgVideo.currentTime = 0;
+
+      messageBox.classList.remove("show");
+      msgImage.classList.remove("imgShow");
+      msgVideo.classList.remove("imgShow");
+      starContent.classList.remove("blur");
+      boxOpen = false;
+
+      if (cardIdx >= data.length) {
+        setTimeout(startGallery, 600);
+      } else {
+        tapHint.style.display = "block";
+        tapHint.innerText = `✨ ${data.length - cardIdx} more memories to reveal ✨`;
+      }
+    });
+  }
+
+  function createHearts() {
+    for (let i = 0; i < 10; i++) {
+      const h = document.createElement("div");
+      h.className  = "heart";
+      h.innerText  = ["💖","🎂","🎈","💝"][Math.floor(Math.random()*4)];
+      h.style.left = Math.random() * 100 + "%";
+      h.style.animationDuration = (3 + Math.random() * 3) + "s";
+      document.body.appendChild(h);
+      setTimeout(() => h.remove(), 6000);
+    }
+  }
+
+  
+  const slides = ["img5.jpg", "img6.jpg", "img7.jpg", "img8.jpg"];
+  let slideIdx = 0;
+  let galleryInterval = null;
+
+  function startGallery() {
+    starScreen.style.display = "none";
+    galleryEl.style.display  = "flex";
+    slideImg.src = slides[slideIdx];
+
+    galleryInterval = setInterval(() => {
+      slideIdx = (slideIdx + 1) % slides.length;
+      slideImg.style.opacity = "0";
+      setTimeout(() => {
+        slideImg.src = slides[slideIdx];
+        slideImg.style.opacity = "1";
+      }, 300);
+    }, 1500);
+
+    setTimeout(showFinal, 6000);
+  }
+
+  function showFinal() {
+    clearInterval(galleryInterval);
+    galleryEl.style.display   = "none";
+    finalScreen.style.display = "flex";
+    createHearts();
+    setInterval(createHearts, 3000);
+    startTyping(lines2, textEl2, null);
+  }
+// BGM — pehle click pe start hogi
+  document.addEventListener('click', () => {
+    const bgm = document.getElementById('bgm');
+    if (bgm.paused) bgm.play();
+  }, { once: true });
+</script>
+</body>
+</html>
