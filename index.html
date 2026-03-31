@@ -17,10 +17,10 @@
     justify-content: center;
     align-items: center;
     background: url('bg1.jpg') center center / contain no-repeat;
-    background-color: #000;   /* ← sides mein black fill */
+    background-color: #000;
     color: black;
     font-size: 26px;
-    font-weight: bold;        /* ← bold */
+    font-weight: bold;
     text-align: center;
     position: relative;
   }
@@ -70,21 +70,7 @@
     pointer-events: auto;
   }
 
-  /* FIX: image poori dikhegi, stretch nahi hogi */
   #messageBox img {
-    width: 100%;
-    max-height: 55vh;
-    object-fit: contain;
-    margin-top: 10px;
-    border-radius: 10px;
-    opacity: 0;
-    transform: scale(0.7);
-    box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
-    transition: all 0.6s ease;
-    display: block;
-  }
-
-  #messageBox video {
     width: 100%;
     max-height: 55vh;
     object-fit: contain;
@@ -103,10 +89,21 @@
     animation: floatImg 3s ease-in-out infinite;
   }
 
-  #messageBox video.imgShow {
+  /* iframe for Google Drive video */
+  #msgVideo {
+    width: 100%;
+    height: 280px;
+    border: none;
+    border-radius: 10px;
+    margin-top: 10px;
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+    display: none;            /* hidden by default */
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  #msgVideo.imgShow {
     opacity: 1;
-    transform: scale(1);
-    animation: none;
   }
 
   @keyframes floatImg {
@@ -138,10 +135,10 @@
     position: fixed;
     width: 100%; height: 100%;
     background: url('bg2.jpg') center center / contain no-repeat;
-    background-color: #000;   /* ← sides mein black fill */
+    background-color: #000;
     color: black;
     font-size: 22px;
-    font-weight: bold;        /* ← bold */
+    font-weight: bold;
     justify-content: center;
     align-items: center;
     text-align: center;
@@ -206,7 +203,8 @@
   <div id="messageBox">
     <p id="msgText"></p>
     <img id="msgImage" alt="">
-    <video id="msgVideo" controls playsinline></video>
+    <!-- iframe for Google Drive videos -->
+    <iframe id="msgVideo" allowfullscreen allow="autoplay"></iframe>
     <p style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:12px;">tap to close</p>
   </div>
 </div>
@@ -224,7 +222,7 @@
   const messageBox    = document.getElementById('messageBox');
   const msgText       = document.getElementById('msgText');
   const msgImage      = document.getElementById('msgImage');
-  const msgVideo      = document.getElementById('msgVideo');
+  const msgVideo      = document.getElementById('msgVideo');  // now iframe
   const tapHint       = document.getElementById('tapHint');
   const galleryEl     = document.getElementById('gallery');
   const slideImg      = document.getElementById('slideImg');
@@ -308,10 +306,14 @@
     drawStars();
 
     const data = [
-      { type: "image", text: "Selfies to acchi khichti ho(kuch to aata h😅)...some special selfies😍",              src: "img1.jpg" },
-      { type: "video", text: "Every moment with you is unforgettable for me...tried to put some funny one's here..", src: "video2.mp4" },
-      { type: "image", text: "I felt most special for you and also most special with you..✨",                        src: "img3.jpg" },
-      { type: "video", text: "Happy Birthday Vasundhara🎂❤️",                                                        src: "video4.mp4" }  // ← img4 ki jagah video4
+      { type: "image", text: "Selfies to acchi khichti ho(kuch to aata h😅)...some special selfies😍",
+        src: "img1.jpg" },
+      { type: "video", text: "Every moment with you is unforgettable for me...tried to put some funny one's here..",
+        src: "https://drive.google.com/file/d/1e5hrp4fsNDtoapv9DirbMJytIHFlRvUs/preview" },
+      { type: "image", text: "I felt most special for you and also most special with you..✨",
+        src: "img3.jpg" },
+      { type: "video", text: "Happy Birthday Vasundhara🎂❤️",
+        src: "https://drive.google.com/file/d/1VV6Fhl2a9xsLJRzemQzNLayMF1h7Pzll/preview" }
     ];
 
     let cardIdx = 0;
@@ -329,18 +331,18 @@
       msgText.innerText = d.text;
 
       if (d.type === "video") {
+        // stop previous video by clearing src first
+        msgVideo.src = "";
         msgImage.style.display = "none";
         msgImage.classList.remove("imgShow");
         msgVideo.style.display = "block";
-        msgVideo.classList.remove("imgShow");
-        msgVideo.src = d.src;
-        msgVideo.load();
         setTimeout(() => {
+          msgVideo.src = d.src;   // load Drive video in iframe
           msgVideo.classList.add("imgShow");
-          msgVideo.play();
-        }, 120);
+        }, 100);
       } else {
-        msgVideo.pause();
+        // stop iframe video
+        msgVideo.src = "";
         msgVideo.style.display = "none";
         msgVideo.classList.remove("imgShow");
         msgImage.style.display = "block";
@@ -357,12 +359,13 @@
     });
 
     messageBox.addEventListener('click', () => {
-      msgVideo.pause();
-      msgVideo.currentTime = 0;
+      // stop iframe video by clearing src
+      msgVideo.src = "";
+      msgVideo.style.display = "none";
+      msgVideo.classList.remove("imgShow");
 
       messageBox.classList.remove("show");
       msgImage.classList.remove("imgShow");
-      msgVideo.classList.remove("imgShow");
       starContent.classList.remove("blur");
       boxOpen = false;
 
@@ -387,7 +390,6 @@
     }
   }
 
-  
   const slides = ["img5.jpg", "img6.jpg", "img7.jpg", "img8.jpg"];
   let slideIdx = 0;
   let galleryInterval = null;
@@ -417,7 +419,8 @@
     setInterval(createHearts, 3000);
     startTyping(lines2, textEl2, null);
   }
-// BGM — pehle click pe start hogi
+
+  // BGM — pehle click pe start hogi
   document.addEventListener('click', () => {
     const bgm = document.getElementById('bgm');
     if (bgm.paused) bgm.play();
